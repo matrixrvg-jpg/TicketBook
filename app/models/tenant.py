@@ -13,7 +13,7 @@ class Tenant(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     subdomain: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False,index=True)
 
     # 1:M Relationship back-reference compiled at runtime wrapper
     events: Mapped[list["Event"]] = relationship(
