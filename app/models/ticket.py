@@ -17,6 +17,12 @@ class Ticket(Base):
         nullable=False,
         index=True
     )
+    user_id:Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
     #sitting locations
     location: Mapped[str | None] = mapped_column(String(100), nullable=True)
     section: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -34,3 +40,4 @@ class Ticket(Base):
 
     # Relationships
     event: Mapped["Event"] = relationship("Event", back_populates="tickets")
+    User: Mapped["User"] = relationship("User", back_populates="tickets")
