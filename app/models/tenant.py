@@ -23,10 +23,3 @@ class Tenant(Base):
         cascade="all, delete-orphan",
         passive_deletes=True
     )
-
-    users: Mapped[list["User"]] = relationship(
-        "User",
-        back_populates="Tenant",
-        cascade="all, delete-orphan",
-        passive_deletes=True
-    )

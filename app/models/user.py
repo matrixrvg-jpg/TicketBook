@@ -12,12 +12,6 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    tenant_id: Mapped[int] = mapped_column(
-        Integer, 
-        ForeignKey("tenants.id", ondelete="CASCADE"), 
-        nullable=False,
-        index=True
-    )
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     
