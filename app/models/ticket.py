@@ -1,5 +1,6 @@
 import datetime
 from typing import TYPE_CHECKING
+from xmlrpc.client import Boolean
 from sqlalchemy import String, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
@@ -32,6 +33,7 @@ class Ticket(Base):
     # State Engine Transition Matrix: AVAILABLE -> RESERVED -> CONFIRMED
     status: Mapped[str] = mapped_column(String(20), server_default="AVAILABLE", nullable=False, index=True)
     reserved_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False,index=True)
 
     
     # HIGH-CONCURRENCY ANCHOR: The OCC Version Tracking Token
