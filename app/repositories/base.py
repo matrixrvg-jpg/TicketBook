@@ -35,4 +35,8 @@ class BaseWriteRepository(Generic[ModelType]):
         self.db_session.add(entity)
         return entity
 
+<<<<<<< HEAD
     # No delete function as we are doing soft deletes by setting is_active to False
+=======
+    # No delete function as we are doing soft deletes by setting is_active to False
+>>>>>>> test_models

@@ -1,5 +1,6 @@
 import datetime
 from typing import TYPE_CHECKING
+from xmlrpc.client import Boolean
 from sqlalchemy import String, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
@@ -17,6 +18,12 @@ class Ticket(Base):
         nullable=False,
         index=True
     )
+    user_id:Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
     #sitting locations
     location: Mapped[str | None] = mapped_column(String(100), nullable=True)
     section: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -26,6 +33,7 @@ class Ticket(Base):
     # State Engine Transition Matrix: AVAILABLE -> RESERVED -> CONFIRMED
     status: Mapped[str] = mapped_column(String(20), server_default="AVAILABLE", nullable=False, index=True)
     reserved_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False,index=True)
 
     
     # HIGH-CONCURRENCY ANCHOR: The OCC Version Tracking Token
@@ -34,3 +42,4 @@ class Ticket(Base):
 
     # Relationships
     event: Mapped["Event"] = relationship("Event", back_populates="tickets")
+    User: Mapped["User"] = relationship("User", back_populates="tickets")
