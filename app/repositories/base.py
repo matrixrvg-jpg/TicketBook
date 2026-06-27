@@ -3,6 +3,7 @@ from unittest import result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import Base
+from sqlalchemy.orm import selectinload
 
 
 # Define a shared generic TypeVar bound to your SQLAlchemy declarative base model
@@ -17,8 +18,7 @@ class BaseReadRepository(Generic[ModelType]):
     #This function can handle only generic primary key lookup , and is built for one row only
     async def get_by_id(self,id:int) -> Optional[ModelType]:
         result = await self.db_session.execute(
-            select(self.model).where(self.model.id == id)
-        ) # returns a raw result object that needs to be processed to get the actual model instance
+            select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
  # This will return the actual model instance or None if not found
 
@@ -35,8 +35,4 @@ class BaseWriteRepository(Generic[ModelType]):
         self.db_session.add(entity)
         return entity
 
-<<<<<<< HEAD
     # No delete function as we are doing soft deletes by setting is_active to False
-=======
-    # No delete function as we are doing soft deletes by setting is_active to False
->>>>>>> test_models
