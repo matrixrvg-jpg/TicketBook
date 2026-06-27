@@ -1,6 +1,6 @@
 from ast import stmt
 from unittest import result
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select 
 from typing import TYPE_CHECKING
 from app.repositories.base import BaseReadRepository
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from app.models.event import Event
 
 class GetEvent(BaseReadRepository[Event]):
-    def __init__(self, db_session):
+    def __init__(self, db_session: AsyncSession):
         super().__init__(Event, db_session)
 
     def soft_delete(self, event: Event):
@@ -27,4 +27,4 @@ class GetEvent(BaseReadRepository[Event]):
         # 3. Extract the clean ORM database model entities out of the cursor columns
         return list(result.scalars().all())
 
-
+    # you can also use the get_by_id method from the BaseReadRepository to fetch a single event by its ID, which is already implemented in the base class.
