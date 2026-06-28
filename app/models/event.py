@@ -27,6 +27,7 @@ class Event(Base):
     start_time :Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time:Mapped[datetime.datetime]= mapped_column(DateTime(timezone=True),nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False,index=True)
+    max_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
 
     
     # OCP Guardrail: Stores dynamic fields (e.g., {"github_url": "string", "tshirt_size": "enum"})
