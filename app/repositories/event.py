@@ -28,45 +28,53 @@ class GetEvent(BaseReadRepository[Event]):
 
     # you can also use the get_by_id method from the BaseReadRepository to fetch a single event by its ID, which is already implemented in the base class.
 
-    class EventRepository(BaseWriteRepository[Event]):
-        def __init__(self, db_session: AsyncSession):
+class EventRepository(BaseWriteRepository[Event]):
+    def __init__(self, db_session: AsyncSession):
         # We still inherit the generic base in case we need simple inserts later
-            super().__init__(model=Event, db_session=db_session)
+        super().__init__(model=Event, db_session=db_session)
 
-        async def create_event_and_tickets_atomically(
-            self, tenant_id: int, title: str, date: datetime, max_capacity: int
-            ) -> int:
-            """
-            Executes a singular, ultra-optimized PostgreSQL query using a CTE.
-            This forces the database engine to generate the tickets natively,
-            bypassing Python memory array loops entirely.
-            """
-        
-            # The exact raw SQL you requested to handle this in one trip
-            raw_query = text("""
+    async def create_event_and_tickets_atomically(
+        self,
+        tenant_id: int,
+        title: str,
+        date: datetime,
+        max_capacity: int,
+    ) -> int:
+        """
+        Executes a singular, ultra-optimized PostgreSQL query using a CTE.
+        This forces the database engine to generate the tickets natively,
+        bypassing Python memory array loops entirely.
+        """
+
+        # The exact raw SQL to handle everything in one database round trip
+        raw_query = text("""
             WITH new_event AS (
                 INSERT INTO events (tenant_id, title, date, max_capacity)
                 VALUES (:tenant_id, :title, :date, :max_capacity)
                 RETURNING id
             )
             INSERT INTO tickets (event_id, seat_number, status, version_id)
-            SELECT new_event.id, 'GA-Slot-' || series.num, 'AVAILABLE', 1
-            FROM new_event, generate_series(1, :max_capacity) AS series(num)
+            SELECT
+                new_event.id,
+                'GA-Slot-' || series.num,
+                'AVAILABLE',
+                1
+            FROM new_event,
+                 generate_series(1, :max_capacity) AS series(num)
             RETURNING event_id;
-            """)
+        """)
 
-            # Execute the query, passing the parameters securely to prevent SQL injection
-            result = await self.db_session.execute(
-            raw_query, 
+        # Execute the query securely using bound parameters
+        result = await self.db_session.execute(
+            raw_query,
             {
                 "tenant_id": tenant_id,
                 "title": title,
                 "date": date,
-                "max_capacity": max_capacity
-            }
-            )
-        
-            # We return the newly generated event_id so the service layer knows it succeeded
-            return result.scalar()
+                "max_capacity": max_capacity,
+            },
+        )
 
+        # Return the newly created event ID
+        return result.scalar()
 

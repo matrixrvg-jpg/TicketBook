@@ -7,7 +7,7 @@ class TenantManagementService:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
         self.event_repo = EventRepository(db_session)
-
+        
     async def execute_event_onboarding_workflow(
         self, tenant_id: int, title: str, date: datetime, capacity: int
     ) -> int:
