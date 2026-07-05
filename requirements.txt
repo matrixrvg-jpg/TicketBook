@@ -1,28 +1,26 @@
 ###############################################################################
 # 1. DOMAIN & DATA ACCESS LAYER (app/models/, app/repositories/)
 ###############################################################################
-SQLAlchemy==2.0.38          # 2.0 Async Mapped Declarative Contract Engine
-psycopg[binary]==3.3.4      # Safe, pre-compiled native async driver for Windows/Python 3.14
-alembic==1.15.1             # Schema-as-Code evolution and tracking framework
-
-
+SQLAlchemy>=2.0.38          # 2.0 Async Mapped Declarative Contract Engine
+psycopg[binary]>=3.3.0      # Native async PostgreSQL driver (Handles Python 3.14 natively)
+alembic>=1.15.1             # Schema-as-Code evolution and tracking framework
 
 ###############################################################################
 # 2. BUSINESS LOGIC & MEMORY STATE ENGINE (app/services/)
 ###############################################################################
-redis==5.2.1                # Async Redis client for state-safe TTL operations
-hiredis==3.1.0              # High-speed C-optimized parser wrapper for Redis I/O
+redis>=5.2.1                # Async Redis client for state-safe TTL operations (No hiredis dependency)
 
 ###############################################################################
 # 3. NETWORK EDGE GUARD & DTO VALIDATION LAYER (app/routers/, app/schemas/)
 ###############################################################################
-fastapi==0.115.8            # Core ASGI framework routing engine
-uvicorn[standard]==0.34.0   # High-concurrency production ASGI web server loop
-pydantic==2.10.6            # Strict Data Transfer Object (DTO) gatekeeping
-pydantic-settings==2.7.1    # Failsafe environment variables parsing (.env)
+fastapi>=0.115.8            # Core ASGI framework routing engine
+uvicorn[standard]>=0.34.0   # High-concurrency production ASGI web server loop
+pydantic>=2.13.0            # Strict data validation (v2.13+ explicitly bundles Python 3.14 wheels)
+pydantic-settings>=2.7.1    # Failsafe environment variables parsing (.env)
 
 ###############################################################################
 # 4. SECURITY & TENANT SCOPING MIDDLEWARE (app/middleware/, app/routers/v1/auth.py)
 ###############################################################################
-pyjwt[crypto]==2.10.1       # Secure token signatures for global tenant scoping
-bcrypt==4.2.1               # Modern, active cryptographic hashing for credentials
+pyjwt[crypto]>=2.10.1       # Secure token signatures for global tenant scoping
+bcrypt>=4.2.1               # Modern, active cryptographic password hashing
+
