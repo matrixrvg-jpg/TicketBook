@@ -4,6 +4,7 @@ from sqlalchemy import String, Integer, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
+from sqlalchemy import Boolean
 from typing import TYPE_CHECKING # Avoids circular imports at runtime
 
 if TYPE_CHECKING:
