@@ -1,13 +1,15 @@
-from typing import Generic, TypeVar, Type, Optional, Sequence
+from typing import Any, Generic, TypeVar, Type, Optional, Sequence
 from unittest import result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import Base
 from sqlalchemy.orm import selectinload
+from app.database import Base
+from alembic.environment import Any
 
 
 # Define a shared generic TypeVar bound to your SQLAlchemy declarative base model
-ModelType = TypeVar("ModelType", bound=Base) 
+ModelType = TypeVar("ModelType", bound=Any) 
 
 # Base Read Repsository with common read operations
 class BaseReadRepository(Generic[ModelType]):
