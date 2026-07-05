@@ -16,7 +16,6 @@ hiredis==3.1.0              # High-speed C-optimized parser wrapper for Redis I/
 ###############################################################################
 fastapi==0.115.8            # Core ASGI framework routing engine
 uvicorn[standard]==0.34.0   # High-concurrency production ASGI web server loop
-winloop==0.1.7              # Native high-speed libuv event loop built specifically for Windows
 pydantic==2.10.6            # Strict Data Transfer Object (DTO) gatekeeping
 pydantic-settings==2.7.1    # Failsafe environment variables parsing (.env)
 
