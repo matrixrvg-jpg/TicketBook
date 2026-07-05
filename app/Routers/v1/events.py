@@ -60,3 +60,26 @@ async def create_event_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=str(e)
         )
+
+
+# for getting events 
+@router.get("/", status_code=status.HTTP_200_OK)
+async def list_active_events_endpoint(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    MVP Testing Endpoint: Fetches all active events safely.
+    """
+    # 1. Instantiate the Read-Only Repository directly 
+    # (Reads often don't need complex Service layer orchestration)
+    read_repo = GetEvent(db_session=db)
+    
+    # 2. Fetch the data
+    events = await read_repo.list_active_events()
+    
+    # 3. Return raw ORM objects (FastAPI will attempt to serialize them automatically for MVP)
+    return {
+        "status": "success",
+        "count": len(events),
+        "data": events
+    }
