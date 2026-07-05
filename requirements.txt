@@ -2,8 +2,9 @@
 # 1. DOMAIN & DATA ACCESS LAYER (app/models/, app/repositories/)
 ###############################################################################
 SQLAlchemy==2.0.38          # 2.0 Async Mapped Declarative Contract Engine
-psycopg[binary]==3.2.4      # Safe, pre-compiled native async driver for Windows/Python 3.14
+psycopg[binary]==3.3.4      # Safe, pre-compiled native async driver for Windows/Python 3.14
 alembic==1.15.1             # Schema-as-Code evolution and tracking framework
+
 
 
 ###############################################################################
