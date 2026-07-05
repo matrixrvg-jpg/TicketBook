@@ -3,7 +3,6 @@ from sqlalchemy.orm import declarative_base
 from app.config import settings
 
 # 1. The Async Engine: The core connection to PostgreSQL
-# We enforce the 'postgresql+asyncpg://' scheme in our config.
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG_SQL,           # Set to True in local dev to see raw SQL queries
