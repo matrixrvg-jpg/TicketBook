@@ -1,15 +1,24 @@
 from fastapi import FastAPI
+import contextlib
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine , Base # Your database engine setup
 import app.models  # Ensure all models are imported for Alembic to detect them
+import asyncio 
 
 from app.Routers.v1 import events
 from app.Routers.v1 import tickets 
 
-# 🚀 This will now successfully create all tables inside ticket_db
-Base.metadata.create_all(bind=engine)
+# 1. This function hooks directly into Uvicorn's event loop
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Uvicorn's loop handles the 'async with' and 'await' smoothly here
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield 
+
 
 app = FastAPI(
+    lifespan=lifespan,
     title="High-Concurrency Ticketing Engine",
     description="Multi-tenant event management and atomic reservation MVP.",
     version="1.0.0",
