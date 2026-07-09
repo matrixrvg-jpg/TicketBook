@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # 2. Network Infrastructure & Driver URIs
     # We must explicitly use 'postgresql+psycopg' as the async scheme for your 3.14 environment
-    DATABASE_URL: str = "postgresql+psycopg://postgres:password@localhost:5432/ticket_db"
+    DATABASE_URL: str = "postgresql+psycopg://postgres:gundya143@localhost:5432/ticket_db"
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # 3. High-Concurrency Connection Parameters (Directly matching your app/database.py names)
