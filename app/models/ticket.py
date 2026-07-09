@@ -1,7 +1,6 @@
 import datetime
-from typing import TYPE_CHECKING
-from xmlrpc.client import Boolean
-from sqlalchemy import String, Integer, ForeignKey, DateTime
+from typing import TYPE_CHECKING # Avoids circular imports at runtime
+from sqlalchemy import String, Integer, ForeignKey, DateTime , Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
