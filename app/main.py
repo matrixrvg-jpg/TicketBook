@@ -1,8 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine , Base # Your database engine setup
+import app.models  # Ensure all models are imported for Alembic to detect them
 
 from app.Routers.v1 import events
 from app.Routers.v1 import tickets 
+
+# 🚀 This will now successfully create all tables inside ticket_db
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="High-Concurrency Ticketing Engine",
