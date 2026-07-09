@@ -9,7 +9,7 @@ class TenantManagementService:
         self.event_repo = EventRepository(db_session)
         
     async def execute_event_onboarding_workflow(
-        self, tenant_id: int, title: str, date: datetime, capacity: int
+        self, tenant_id: int, title: str, date: datetime, max_capacity: int
     ) -> int:
         """
         Orchestrates event creation. Because the database handles the heavy lifting
@@ -22,7 +22,7 @@ class TenantManagementService:
             tenant_id=tenant_id,
             title=title,
             date=date,
-            max_capacity=capacity
+            max_capacity=max_capacity
         )
         
         return new_event_id
