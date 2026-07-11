@@ -21,7 +21,7 @@ class Event(Base):
         nullable=False,
         index=True
     )
-    category:Mapped[str] = mapped_column(String(50), nullable=True, index=True)
+    category:Mapped[str] = mapped_column(String(50), nullable=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     base_price:Mapped[int] = mapped_column(Integer,nullable=True)
