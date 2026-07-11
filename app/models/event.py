@@ -32,7 +32,7 @@ class Event(Base):
 
     
     # OCP Guardrail: Stores dynamic fields (e.g., {"github_url": "string", "tshirt_size": "enum"})
-    custom_form_schema: Mapped[dict] = mapped_column(JSONB, server_default="{}", nullable=False)
+    custom_form_schema: Mapped[dict] = mapped_column(JSONB, server_default="{}", nullable=True)
 
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="events")
