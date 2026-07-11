@@ -21,13 +21,13 @@ class Event(Base):
         nullable=False,
         index=True
     )
-    category:Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    category:Mapped[str] = mapped_column(String(50), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    base_price:Mapped[int] = mapped_column(Integer,nullable=False)
-    start_time :Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    end_time:Mapped[datetime.datetime]= mapped_column(DateTime(timezone=True),nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False,index=True)
+    base_price:Mapped[int] = mapped_column(Integer,nullable=True)
+    start_time :Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_time:Mapped[datetime.datetime]= mapped_column(DateTime(timezone=True),nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=True,index=True)
     max_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
 
     
