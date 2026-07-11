@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     # We must explicitly use 'postgresql+psycopg' as the async scheme for your 3.14 environment
     DATABASE_URL: str = "postgresql+psycopg://postgres:gundya143@localhost:5432/ticket_db"
     REDIS_URL: str = "redis://localhost:6379/0"
-
     # 3. High-Concurrency Connection Parameters (Directly matching your app/database.py names)
     DB_POOL_SIZE: int = 20             # Maps directly to settings.DB_POOL_SIZE
     DB_OVERFLOW: int = 10              # Maps directly to settings.DB_OVERFLOW
