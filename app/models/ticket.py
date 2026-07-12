@@ -22,7 +22,7 @@ class Ticket(Base):
     user_id:Mapped[int] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,  # Nullable because a ticket may not be reserved yet
         index=True
     )
     #sitting locations
