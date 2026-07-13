@@ -6,7 +6,7 @@ from app.models.tenant import Tenant
 class TenantService:
     def __init__(self, db_session: AsyncSession):
         self.session = db_session
-        self.repo = TenantRepository(db_sesion=db_session)
+        self.repo = TenantRepository(db_session=db_session)
 
     async def register_new_tenant(self, payload: TenantCreate) -> Tenant:
         """
