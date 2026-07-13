@@ -17,6 +17,7 @@ fastapi>=0.115.8            # Core ASGI framework routing engine
 uvicorn[standard]>=0.34.0   # High-concurrency production ASGI web server loop
 pydantic>=2.13.0            # Strict data validation (v2.13+ explicitly bundles Python 3.14 wheels)
 pydantic-settings>=2.7.1    # Failsafe environment variables parsing (.env)
+email-validator>=2.2.0      # Mandatory runtime dependency for Pydantic's EmailStr validation
 
 ###############################################################################
 # 4. SECURITY & TENANT SCOPING MIDDLEWARE (app/middleware/, app/routers/v1/auth.py)
