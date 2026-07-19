@@ -5,8 +5,6 @@ from sqlalchemy import select
 from app.database import Base
 from sqlalchemy.orm import selectinload
 from app.database import Base
-from alembic.environment import Any
-
 
 # Define a shared generic TypeVar bound to your SQLAlchemy declarative base model
 ModelType = TypeVar("ModelType", bound=Any) 

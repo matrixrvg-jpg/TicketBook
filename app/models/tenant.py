@@ -6,6 +6,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.user import User
+    from app.models.user_tenant_ref import UserTenantRef
 
 
 class Tenant(Base):
@@ -20,6 +21,12 @@ class Tenant(Base):
     events: Mapped[list["Event"]] = relationship(
         "Event", 
         back_populates="tenant", 
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    user_refs: Mapped[list["UserTenantRef"]] = relationship(
+        "UserTenantRef", 
+        back_populates="tenant",
         cascade="all, delete-orphan",
         passive_deletes=True
     )

@@ -3,7 +3,11 @@ import contextlib
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine , Base # Your database engine setup
 import app.models  # Ensure all models are imported for Alembic to detect them
-import asyncio 
+import asyncio
+import sys
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from app.Routers.v1 import events
 from app.Routers.v1 import tickets 

@@ -7,6 +7,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.tenant import Tenant
     from app.models.ticket import Ticket
+    from app.models.user_tenant_ref import UserTenantRef
 
 class User(Base):
     __tablename__ = "users"
@@ -20,7 +21,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relationships
-    tenant: Mapped["Tenant"] = relationship("Tenant")
+    tenant_refs: Mapped[list["UserTenantRef"]] = relationship("UserTenantRef", back_populates="user")
     tickets:Mapped[list["Ticket"]]=relationship(
         "Ticket",
         back_populates="User",

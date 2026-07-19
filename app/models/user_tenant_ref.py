@@ -17,5 +17,5 @@ class UserTenantRef(Base):
     tenant_id: Mapped[int] = mapped_column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False,index=True)
 
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="tenants")
-    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="users")
+    user: Mapped["User"] = relationship("User", back_populates="tenant_refs")
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="user_refs")

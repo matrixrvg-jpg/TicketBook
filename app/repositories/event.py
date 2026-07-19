@@ -49,8 +49,8 @@ class EventRepository(BaseWriteRepository[Event]):
         # The exact raw SQL to handle everything in one database round trip
         raw_query = text("""
             WITH new_event AS (
-                INSERT INTO events (tenant_id, title, date, max_capacity)
-                VALUES (:tenant_id, :title, :date, :max_capacity)
+                INSERT INTO events (tenant_id, title, date, max_capacity, is_active)
+                VALUES (:tenant_id, :title, :date, :max_capacity, true)
                 RETURNING id
             )
             INSERT INTO tickets (event_id, seat_number, status, version_id)

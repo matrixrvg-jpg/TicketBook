@@ -10,6 +10,7 @@ from app.Routers.dependencies import get_db
 from app.services.tenant_mgmt import TenantManagementService
 from app.repositories.event import GetEvent
 
+
 router = APIRouter(prefix="/events", tags=["Events (MVP Test)"])
 
 # ---------------------------------------------------------
