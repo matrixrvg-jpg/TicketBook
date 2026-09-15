@@ -1,8 +1,20 @@
 # app/repositories/ticket.py
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.base import BaseWriteRepository
+from app.repositories.base import BaseWriteRepository, BaseReadRepository
 from app.models.ticket import Ticket
+from sqlalchemy import select
+
+class GetTicket(BaseReadRepository[Ticket]):
+    def __init__(self, db_session: AsyncSession):
+        super().__init__(Ticket, db_session)
+
+    async def list_tickets_by_event(self, event_id: int) -> list[Ticket]:
+        stmt = select(self.model).where(
+            self.model.event_id == event_id
+        ).order_by(self.model.id)
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
 class TicketRepository(BaseWriteRepository[Ticket]):
     def __init__(self, db_session: AsyncSession):

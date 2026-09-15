@@ -13,16 +13,8 @@ from app.repositories.event import GetEvent
 
 router = APIRouter(prefix="/events", tags=["Events (MVP Test)"])
 
-# ---------------------------------------------------------
-# MVP Inline Schemas (To validate incoming JSON)
-# ---------------------------------------------------------
-class MVPEventCreate(BaseModel):
-    tenant_id: int
-    title: str
-    date: datetime
-    max_capacity: int
-
-
+from app.schemas.events import MVPEventCreate, EventResponse, TicketResponse
+from app.repositories.ticket import GetTicket
 # ---------------------------------------------------------
 # POST: The Write Path (Command)
 # ---------------------------------------------------------
@@ -64,7 +56,7 @@ async def create_event_endpoint(
 
 
 # for getting events 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK, response_model=dict[str, str | int | list[EventResponse]])
 async def list_active_events_endpoint(
     db: AsyncSession = Depends(get_db)
 ):
@@ -83,4 +75,21 @@ async def list_active_events_endpoint(
         "status": "success",
         "count": len(events),
         "data": events
+    }
+
+@router.get("/{event_id}/tickets", status_code=status.HTTP_200_OK, response_model=dict[str, str | int | list[TicketResponse]])
+async def list_event_tickets_endpoint(
+    event_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Returns the exact tickets for an event to build the true Seat Map.
+    """
+    read_repo = GetTicket(db_session=db)
+    tickets = await read_repo.list_tickets_by_event(event_id)
+    
+    return {
+        "status": "success",
+        "count": len(tickets),
+        "data": tickets
     }
