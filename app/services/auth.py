@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
+from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.schemas.auth import UserCreate, UserLogin, Token
@@ -19,16 +20,19 @@ class AuthService:
         self.read_repo = UserReadRepository(db_session)
         self.write_repo = UserWriteRepository(db_session)
 
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return bcrypt.checkpw(
+    async def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        return await run_in_threadpool(
+            bcrypt.checkpw,
             plain_password.encode('utf-8'),
             hashed_password.encode('utf-8')
         )
 
-    def get_password_hash(self, password: str) -> str:
+    async def get_password_hash(self, password: str) -> str:
         pwd_bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
-        return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
+        # bcrypt.hashpw is also CPU bound
+        hashed_bytes = await run_in_threadpool(bcrypt.hashpw, pwd_bytes, salt)
+        return hashed_bytes.decode('utf-8')
 
     def create_access_token(self, data: dict, expires_delta: timedelta | None = None) -> str:
         to_encode = data.copy()
@@ -46,7 +50,7 @@ class AuthService:
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already registered")
 
-        hashed_pwd = self.get_password_hash(user_data.password)
+        hashed_pwd = await self.get_password_hash(user_data.password)
         new_user = User(
             email=user_data.email,
             hashed_password=hashed_pwd,
@@ -67,7 +71,8 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        if not self.verify_password(login_data.password, user.hashed_password):
+        is_valid = await self.verify_password(login_data.password, user.hashed_password)
+        if not is_valid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",

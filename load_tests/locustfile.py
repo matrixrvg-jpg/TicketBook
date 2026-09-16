@@ -10,6 +10,24 @@ class TicketBuyerUser(HttpUser):
     # Replace with an actual ticket ID from that event
     TARGET_SPECIFIC_TICKET_ID = 1 
 
+    def on_start(self):
+        """Executed when a simulated user starts."""
+        # Pick a random user from our seeded 100 users
+        user_id = random.randint(1, 100)
+        email = f"loadtest{user_id}@ticketbook.com"
+        
+        response = self.client.post("/api/v1/auth/login", json={
+            "email": email,
+            "password": "password123"
+        })
+        
+        if response.status_code == 200:
+            token = response.json().get("access_token")
+            self.headers = {"Authorization": f"Bearer {token}"}
+        else:
+            print(f"Failed to login user {email}")
+            self.headers = {}
+
     @task(3)
     def general_admission_buy(self):
         """
@@ -18,9 +36,8 @@ class TicketBuyerUser(HttpUser):
         Expectation: High success rate, extremely fast throughput, no deadlocks.
         """
         self.client.post("/api/v1/checkout/reserve-random", json={
-            "event_id": self.TARGET_EVENT_ID,
-            "user_id": random.randint(1, 1000) # Mock different users
-        })
+            "event_id": self.TARGET_EVENT_ID
+        }, headers=self.headers)
 
     @task(1)
     def specific_seat_stampede(self):
@@ -30,9 +47,8 @@ class TicketBuyerUser(HttpUser):
         Expectation: Exactly 1 success (HTTP 200). Everyone else gets HTTP 409 Conflict.
         """
         with self.client.post("/api/v1/checkout/reserve", json={
-            "ticket_id": self.TARGET_SPECIFIC_TICKET_ID,
-            "user_id": random.randint(1, 1000)
-        }, catch_response=True) as response:
+            "ticket_id": self.TARGET_SPECIFIC_TICKET_ID
+        }, headers=self.headers, catch_response=True) as response:
             
             # For the stampede, a 409 Conflict is actually a SUCCESSFUL test of our OCC lock!
             if response.status_code == 409:

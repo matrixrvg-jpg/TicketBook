@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Ticket, ShieldAlert, Zap } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
 
 export default function EventDetails() {
+  const { token } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedSeat, setSelectedSeat] = useState(null);
@@ -45,17 +47,26 @@ export default function EventDetails() {
 
   const handleReserveSpecific = async () => {
     if (!selectedSeat) return;
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     setStatus('loading');
     
     try {
       await axios.post('http://localhost:8000/api/v1/checkout/reserve', {
-        ticket_id: parseInt(selectedSeat.id),
-        user_id: 1 // Mock user
+        ticket_id: parseInt(selectedSeat.id)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       setStatus('success');
       setTimeout(() => navigate('/'), 3000);
     } catch (error) {
       console.error(error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
       setStatus('error');
       setErrorMsg(error.response?.data?.detail || "High Demand: Someone else grabbed this seat! (Optimistic Concurrency Lock Failed)");
       setSelectedSeat(null);
@@ -64,18 +75,27 @@ export default function EventDetails() {
   };
 
   const handleReserveGeneralAdmission = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     setStatus('loading');
     setSelectedSeat(null); // Clear any specific seat selection
     try {
       const response = await axios.post('http://localhost:8000/api/v1/checkout/reserve-random', {
-        event_id: parseInt(id),
-        user_id: 1 // Mock user
+        event_id: parseInt(id)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       setStatus('success');
       setTimeout(() => navigate('/'), 3000);
     } catch (error) {
       console.error(error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
       setStatus('error');
       setErrorMsg(error.response?.data?.detail || "Sold Out: No tickets remain for this event.");
       fetchTickets(); // Refresh map

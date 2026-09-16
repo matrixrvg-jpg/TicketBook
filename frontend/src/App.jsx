@@ -23,7 +23,7 @@ function Navigation() {
             </Link>
           ) : (
             <Link to="/login" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-              Organizer Login
+              Login
             </Link>
           )}
         </div>

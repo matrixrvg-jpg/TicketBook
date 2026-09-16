@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.Routers.dependencies import get_db
+from app.dependencies import get_db, get_current_user
+from app.models.user import User
 from app.schemas.checkout import TicketReserveRequest, TicketReserveResponse
 from app.services.checkout import CheckoutService
 
@@ -9,28 +10,19 @@ router = APIRouter(prefix="/checkout", tags=["Checkout (Resume Flex)"])
 @router.post("/reserve", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse)
 async def reserve_ticket_endpoint(
     payload: TicketReserveRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     The Core Flex: Reserves a ticket using Optimistic Concurrency Control.
     Safely handles massive parallel requests for the same event.
     """
-    # ---------------------------------------------------------
-    # MVP Hack: Ensure the mock user exists to prevent FK errors
-    # ---------------------------------------------------------
-    from app.models.user import User
-    from sqlalchemy import select
-    user_check = await db.execute(select(User).where(User.id == payload.user_id))
-    if not user_check.scalar_one_or_none():
-        db.add(User(id=payload.user_id, email="resume@portfolio.com", role="ATTENDEE", is_active=True))
-        await db.commit()
-
     service = CheckoutService(db_session=db)
     
     try:
         ticket = await service.reserve_ticket(
             ticket_id=payload.ticket_id,
-            user_id=payload.user_id
+            user_id=current_user.id
         )
         return TicketReserveResponse(
             status="success",
@@ -56,27 +48,18 @@ from app.schemas.checkout import TicketRandomReserveRequest
 @router.post("/reserve-random", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse)
 async def reserve_random_ticket_endpoint(
     payload: TicketRandomReserveRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     The General Admission Flow: Reserves any available ticket using PostgreSQL SKIP LOCKED.
     """
-    # ---------------------------------------------------------
-    # MVP Hack: Ensure the mock user exists to prevent FK errors
-    # ---------------------------------------------------------
-    from app.models.user import User
-    from sqlalchemy import select
-    user_check = await db.execute(select(User).where(User.id == payload.user_id))
-    if not user_check.scalar_one_or_none():
-        db.add(User(id=payload.user_id, email="resume@portfolio.com", role="ATTENDEE", is_active=True))
-        await db.commit()
-
     service = CheckoutService(db_session=db)
     
     try:
         ticket = await service.reserve_random_ticket(
             event_id=payload.event_id,
-            user_id=payload.user_id
+            user_id=current_user.id
         )
         return TicketReserveResponse(
             status="success",
