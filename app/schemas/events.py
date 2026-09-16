@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class MVPEventCreate(BaseModel):
-    tenant_id: int
     title: str
     date: datetime
     max_capacity: int
@@ -15,6 +14,7 @@ class EventResponse(BaseModel):
     max_capacity: int
     base_price: int | None = None
     is_active: bool | None = None
+    sold_tickets: int = 0
 
     class Config:
         from_attributes = True

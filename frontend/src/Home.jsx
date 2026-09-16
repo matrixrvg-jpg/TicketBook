@@ -1,78 +1,108 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, Users } from 'lucide-react';
-
-const MOCK_EVENTS = [
-  { id: 1, title: "Cyberpunk 2077 Symphony", date: "2026-10-15T19:00:00Z", max_capacity: 100 },
-  { id: 2, title: "AI Developers Conference", date: "2026-11-20T09:00:00Z", max_capacity: 500 },
-  { id: 3, title: "Midnight Synthwave Fest", date: "2026-12-05T22:00:00Z", max_capacity: 200 }
-];
+import { Calendar, Users, MapPin, ChevronRight, Activity } from 'lucide-react';
 
 export default function Home() {
-  const [events, setEvents] = useState(MOCK_EVENTS);
-  const [loading, setLoading] = useState(false);
-
+  const [events, setEvents] = useState([]);
+  
   useEffect(() => {
-    // Attempt to fetch from real backend, fallback to mock if it fails
     const fetchEvents = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/v1/events');
+        const response = await axios.get('http://localhost:8000/api/v1/events/public');
         if (response.data && response.data.data.length > 0) {
           setEvents(response.data.data);
         }
       } catch (error) {
-        console.warn('Backend not running or empty, using mock events for UI demonstration.');
+        console.warn('Backend error', error);
       }
     };
     fetchEvents();
   }, []);
 
   return (
-    <div className="animate-fade-in" style={{ marginTop: '20px' }}>
-      <div style={{ padding: '60px 0', borderBottom: '1px solid var(--card-border)', marginBottom: '40px' }}>
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-          <span className="tech-badge">PostgreSQL CTE</span>
-          <span className="tech-badge">Optimistic Concurrency</span>
-          <span className="tech-badge">Multi-Tenant</span>
+    <div className="animate-fade-in">
+      {/* Hero Section */}
+      <section className="hero-banner" style={{ marginTop: '24px' }}>
+        <div className="hero-content">
+          <h1>Discover Live Events</h1>
+          <p>
+            Powered by our ultra-fast Concurrency Engine. Guaranteeing your tickets, even under massive scale.
+          </p>
+          <div style={{ marginTop: '32px', display: 'flex', gap: '16px' }}>
+            <span className="tech-badge" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <Activity size={14} style={{ display: 'inline', marginRight: '4px' }} />
+              PostgreSQL CTE Bulk Insertion
+            </span>
+            <span className="tech-badge" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>
+              Optimistic Concurrency Control
+            </span>
+          </div>
         </div>
-        <h1 className="title-glow" style={{ fontSize: '3.5rem', marginBottom: '16px' }}>
-          High-Concurrency Core
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '600px', lineHeight: '1.6' }}>
-          A demonstration of enterprise backend scalability. Handling massive race conditions via row-level locking and versioning without degrading performance.
-        </p>
-      </div>
+      </section>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Active Database Shards</h2>
-        <span style={{ color: 'var(--accent)', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.9rem' }}>
-          Status: Online
-        </span>
-      </div>
+      {/* Events List */}
+      <section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2>Trending Near You</h2>
+          <span style={{ color: 'var(--primary-blue)', fontWeight: 600, fontSize: '0.9rem' }}>
+            {events.length} Events Available
+          </span>
+        </div>
 
-      <div className="events-grid">
-        {events.map((event) => (
-          <Link to={`/event/${event.id}`} key={event.id} className="event-card glass">
-            <div className="card-header">
-              <span className="date-badge">
-                {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            </div>
-            <h2 className="event-title">{event.title}</h2>
-            <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Calendar size={16} />
-                {new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Users size={16} />
-                {event.max_capacity} Cap
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+        {events.length === 0 ? (
+          <div className="glass" style={{ padding: '60px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--text-muted)' }}>No events are currently scheduled.</p>
+          </div>
+        ) : (
+          <div className="events-grid">
+            {events.map((event) => {
+              const dateObj = new Date(event.date);
+              const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+              const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
+              const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
+              const time = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+              return (
+                <Link to={`/event/${event.id}`} key={event.id} className="event-card">
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    
+                    {/* Date Block */}
+                    <div style={{ textAlign: 'center', minWidth: '60px' }}>
+                      <div style={{ color: 'var(--primary-blue)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>{month}</div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: '1' }}>{day}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>{dayOfWeek}</div>
+                    </div>
+                    
+                    {/* Event Details */}
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem' }}>{event.title}</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Calendar size={14} /> {time}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <MapPin size={14} /> Global Server Shard #{event.tenant_id}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Users size={14} /> {event.max_capacity} Max Capacity
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action Button */}
+                  <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--card-border)', display: 'flex', justifyContent: 'flex-end' }}>
+                    <span className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '8px 16px', fontSize: '0.9rem' }}>
+                      See Tickets <ChevronRight size={16} />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

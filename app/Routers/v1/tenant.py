@@ -7,8 +7,8 @@ from app.schemas.tenant import TenantCreate, TenantIdResponse
 # Import the orchestrator service
 from app.services.tenant import TenantService
 
-# Import your database injection hook
-from app.Routers.dependencies import get_db 
+# Import your database injection hook and auth dependencies
+from app.dependencies import get_db, get_current_organizer 
 
 # Initialize the router with a prefix and Swagger UI tag
 router = APIRouter(prefix="/tenants", tags=["Tenants (System Admin)"])
@@ -16,10 +16,11 @@ router = APIRouter(prefix="/tenants", tags=["Tenants (System Admin)"])
 @router.post("/", response_model=TenantIdResponse, status_code=status.HTTP_201_CREATED)
 async def create_tenant(
     payload: TenantCreate, 
-    db_session: AsyncSession = Depends(get_db)
+    db_session: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_organizer)
 ):
     """
-    Registers a new Tenant in the multi-tenant engine.
+    Registers a new Tenant in the multi-tenant engine and links it to the logged in Organizer.
     Returns only the newly generated Tenant ID.
     """
     # 1. Instantiate the service layer with the injected session
@@ -27,7 +28,7 @@ async def create_tenant(
     
     try:
         # 2. Hand off execution to the business logic layer
-        tenant = await service.register_new_tenant(payload)
+        tenant = await service.register_new_tenant(payload, current_user.id)
         
         # 3. Return the full object. 
         # FastAPI will use TenantIdResponse to strip away everything except the 'id'
@@ -41,3 +42,10 @@ async def create_tenant(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail=str(e)
         )
+
+@router.get("/my")
+async def get_my_tenant(current_user = Depends(get_current_organizer)):
+    """
+    Returns the tenant ID associated with the logged-in organizer.
+    """
+    return {"tenant_id": current_user.tenant_id}

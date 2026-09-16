@@ -61,3 +61,21 @@ class CheckoutService:
             
         raise ValueError("High Demand: Unable to secure a ticket due to concurrency. Please try again.")
 
+    async def reserve_random_ticket(self, event_id: int, user_id: int) -> Ticket:
+        """
+        Attempts to reserve any available ticket using SKIP LOCKED.
+        """
+        from app.repositories.ticket import TicketRepository
+        repo = TicketRepository(self.db_session)
+        
+        ticket_id = await repo.reserve_any_available_ticket(event_id, user_id)
+        
+        if not ticket_id:
+            raise ValueError("Event is completely Sold Out!")
+            
+        await self.db_session.commit()
+        
+        # Fetch the newly reserved ticket to return
+        stmt = select(Ticket).where(Ticket.id == ticket_id)
+        result = await self.db_session.execute(stmt)
+        return result.scalar_one()

@@ -2,13 +2,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.tenant import TenantRepository
 from app.schemas.tenant import TenantCreate
 from app.models.tenant import Tenant
+from app.models.user_tenant_ref import UserTenantRef
 
 class TenantService:
     def __init__(self, db_session: AsyncSession):
         self.session = db_session
         self.repo = TenantRepository(db_session=db_session)
 
-    async def register_new_tenant(self, payload: TenantCreate) -> Tenant:
+    async def register_new_tenant(self, payload: TenantCreate, user_id: int) -> Tenant:
         """
         Orchestrates the creation of a Tenant. 
         Owns the transaction boundary (Commit/Rollback).
@@ -20,9 +21,14 @@ class TenantService:
                 business_email=payload.business_email
             )
             
-            # (Future Phase): You could ask an EventRepository to stage a default event right here
+            # Flush to get the tenant.id generated
+            await self.session.flush()
+
+            # 2. Link the logged-in user to this new tenant
+            user_tenant_ref = UserTenantRef(user_id=user_id, tenant_id=tenant.id)
+            self.session.add(user_tenant_ref)
             
-            # 2. Seal the Unit of Work
+            # 3. Seal the Unit of Work
             await self.session.commit()
             return tenant
             

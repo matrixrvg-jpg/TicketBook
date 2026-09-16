@@ -13,6 +13,7 @@ from app.Routers.v1 import events
 from app.Routers.v1 import tickets 
 from app.Routers.v1 import tenant
 from app.Routers.v1 import checkout
+from app.Routers.v1 import auth
 
 # 1. This function hooks directly into Uvicorn's event loop
 @contextlib.asynccontextmanager
@@ -44,6 +45,7 @@ app.include_router(events.router, prefix="/api/v1")
 app.include_router(tickets.router, prefix="/api/v1")
 app.include_router(tenant.router, prefix="/api/v1")
 app.include_router(checkout.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 
 # 4. System Health Check Endpoint
 @app.get("/health", tags=["System Maintenance"])

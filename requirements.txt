@@ -25,3 +25,7 @@ email-validator>=2.2.0      # Mandatory runtime dependency for Pydantic's EmailS
 pyjwt[crypto]>=2.10.1       # Secure token signatures for global tenant scoping
 bcrypt>=4.2.1               # Modern, active cryptographic password hashing
 
+###############################################################################
+# 5. CHAOS & LOAD TESTING ENGINE (load_tests/)
+###############################################################################
+locust>=2.32.0              # High-concurrency simulated user load testing

@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # 1. Clean imports: Pull exactly what we need, and pull Event globally so it exists at runtime.
 from app.repositories.base import BaseReadRepository, BaseWriteRepository
 from app.models.event import Event
+from app.models.ticket import Ticket
+from sqlalchemy import func
 
 class GetEvent(BaseReadRepository[Event]):
     def __init__(self, db_session: AsyncSession):
@@ -16,15 +18,41 @@ class GetEvent(BaseReadRepository[Event]):
     def restore(self, event: Event):
         event.is_active = True
 
-    async def list_active_events(self) -> list[Event]:
-        # 1. Compile an explicit relational statement graph
-        stmt = select(self.model).where(self.model.is_active == True)
+    async def list_active_events(self) -> list[dict]:
+        # 1. Subquery to count reserved tickets per event
+        subq = (
+            select(Ticket.event_id, func.count(Ticket.id).label("sold_count"))
+            .where(Ticket.status == "RESERVED")
+            .group_by(Ticket.event_id)
+            .subquery()
+        )
+
+        # 2. Main query joining the events table with the subquery
+        stmt = (
+            select(self.model, func.coalesce(subq.c.sold_count, 0))
+            .outerjoin(subq, self.model.id == subq.c.event_id)
+            .where(self.model.is_active == True)
+        )
     
-        # 2. Execute non-blocking I/O flight over the connection pool stream
+        # 3. Execute non-blocking I/O flight over the connection pool stream
         result = await self.db_session.execute(stmt)
     
-        # 3. Extract the clean ORM database model entities out of the cursor columns
-        return list(result.scalars().all())
+        # 4. Map the ORM object and the count into a clean dictionary for FastAPI
+        events_data = []
+        for event_obj, sold_count in result.all():
+            event_dict = {
+                "id": event_obj.id,
+                "tenant_id": event_obj.tenant_id,
+                "title": event_obj.title,
+                "date": event_obj.date,
+                "max_capacity": event_obj.max_capacity,
+                "base_price": event_obj.base_price,
+                "is_active": event_obj.is_active,
+                "sold_tickets": sold_count
+            }
+            events_data.append(event_dict)
+            
+        return events_data
 
     # you can also use the get_by_id method from the BaseReadRepository to fetch a single event by its ID, which is already implemented in the base class.
 

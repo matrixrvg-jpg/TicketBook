@@ -5,6 +5,10 @@ class TicketReserveRequest(BaseModel):
     ticket_id: int
     user_id: int # Assume a user is logged in for the resume MVP
 
+class TicketRandomReserveRequest(BaseModel):
+    event_id: int
+    user_id: int
+
 class TicketReserveResponse(BaseModel):
     status: str
     message: str

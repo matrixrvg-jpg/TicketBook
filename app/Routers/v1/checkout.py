@@ -51,6 +51,50 @@ async def reserve_ticket_endpoint(
             detail=f"An unexpected error occurred: {str(e)}"
         )
 
+from app.schemas.checkout import TicketRandomReserveRequest
+
+@router.post("/reserve-random", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse)
+async def reserve_random_ticket_endpoint(
+    payload: TicketRandomReserveRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    The General Admission Flow: Reserves any available ticket using PostgreSQL SKIP LOCKED.
+    """
+    # ---------------------------------------------------------
+    # MVP Hack: Ensure the mock user exists to prevent FK errors
+    # ---------------------------------------------------------
+    from app.models.user import User
+    from sqlalchemy import select
+    user_check = await db.execute(select(User).where(User.id == payload.user_id))
+    if not user_check.scalar_one_or_none():
+        db.add(User(id=payload.user_id, email="resume@portfolio.com", role="ATTENDEE", is_active=True))
+        await db.commit()
+
+    service = CheckoutService(db_session=db)
+    
+    try:
+        ticket = await service.reserve_random_ticket(
+            event_id=payload.event_id,
+            user_id=payload.user_id
+        )
+        return TicketReserveResponse(
+            status="success",
+            message="General Admission Ticket successfully reserved for 10 minutes pending payment.",
+            ticket_id=ticket.id,
+            reserved_at=str(ticket.reserved_at)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+
 @router.post("/confirm", status_code=status.HTTP_200_OK)
 async def mock_stripe_webhook(
     ticket_id: int,

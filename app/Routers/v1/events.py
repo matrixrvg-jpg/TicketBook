@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import the exact dependency generator you just built
-from app.Routers.dependencies import get_db 
+from app.dependencies import get_db, get_current_organizer
 
 # Import your services and read repositories
 from app.services.tenant_mgmt import TenantManagementService
@@ -21,18 +21,22 @@ from app.repositories.ticket import GetTicket
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_event_endpoint(
     payload: MVPEventCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_organizer)
 ):
     """
     MVP Testing Endpoint: Creates an event and its inventory via the CTE query.
     """
+    if not current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Organizer must create a business profile first")
+
     # 1. Instantiate the business orchestrator
     service = TenantManagementService(db_session=db)
     
     try:
         # 2. Fire the workflow (this triggers your raw CTE query)
         new_event_id = await service.execute_event_onboarding_workflow(
-            tenant_id=payload.tenant_id,
+            tenant_id=current_user.tenant_id,
             title=payload.title,
             date=payload.date,
             max_capacity=payload.max_capacity
@@ -56,21 +60,39 @@ async def create_event_endpoint(
 
 
 # for getting events 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=dict[str, str | int | list[EventResponse]])
-async def list_active_events_endpoint(
+@router.get("/dashboard", status_code=status.HTTP_200_OK, response_model=dict[str, str | int | list[EventResponse]])
+async def list_dashboard_events_endpoint(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_organizer)
+):
+    """
+    Private endpoint: Fetches active events only for the logged-in Organizer.
+    """
+    if not current_user.tenant_id:
+        return {"status": "success", "count": 0, "data": []}
+
+    read_repo = GetEvent(db_session=db)
+    # The existing list_active_events method needs to be filtered by tenant_id.
+    # For now, we will fetch all and filter in Python, but we should update GetEvent to accept tenant_id.
+    events = await read_repo.list_active_events()
+    my_events = [e for e in events if e["tenant_id"] == current_user.tenant_id]
+    
+    return {
+        "status": "success",
+        "count": len(my_events),
+        "data": my_events
+    }
+
+@router.get("/public", status_code=status.HTTP_200_OK, response_model=dict[str, str | int | list[EventResponse]])
+async def list_public_events_endpoint(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    MVP Testing Endpoint: Fetches all active events safely.
+    Public endpoint: Fetches all active events across all tenants for the frontpage.
     """
-    # 1. Instantiate the Read-Only Repository directly 
-    # (Reads often don't need complex Service layer orchestration)
     read_repo = GetEvent(db_session=db)
-    
-    # 2. Fetch the data
     events = await read_repo.list_active_events()
     
-    # 3. Return raw ORM objects (FastAPI will attempt to serialize them automatically for MVP)
     return {
         "status": "success",
         "count": len(events),
