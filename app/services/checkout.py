@@ -2,8 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from datetime import datetime, timezone, timedelta
 import logging
-
 from app.models.ticket import Ticket
+from app.websockets import manager
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,13 @@ class CheckoutService:
                 await self.db_session.commit()
                 # Refresh to get the updated state
                 await self.db_session.refresh(ticket)
+                
+                # Broadcast the lock to all viewers
+                await manager.broadcast_to_event(ticket.event_id, {
+                    "ticket_id": ticket.id,
+                    "status": "RESERVED"
+                })
+                
                 return ticket
             
             # If rowcount == 0, another thread updated this specific ticket first.
@@ -83,7 +90,15 @@ class CheckoutService:
         # Fetch the newly reserved ticket to return
         stmt = select(Ticket).where(Ticket.id == ticket_id)
         result = await self.db_session.execute(stmt)
-        return result.scalar_one()
+        ticket = result.scalar_one()
+        
+        # Broadcast the lock
+        await manager.broadcast_to_event(ticket.event_id, {
+            "ticket_id": ticket.id,
+            "status": "RESERVED"
+        })
+        
+        return ticket
 
     async def confirm_ticket(self, ticket_id: int, user_id: int, attendee_name: str | None = None, attendee_age: int | None = None) -> Ticket:
         stmt = select(Ticket).where(Ticket.id == ticket_id)
@@ -129,4 +144,11 @@ class CheckoutService:
             
         await self.db_session.commit()
         await self.db_session.refresh(ticket)
+        
+        # Broadcast final confirmation
+        await manager.broadcast_to_event(ticket.event_id, {
+            "ticket_id": ticket.id,
+            "status": "CONFIRMED"
+        })
+        
         return ticket

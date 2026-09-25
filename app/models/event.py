@@ -23,6 +23,7 @@ class Event(Base):
     )
     category:Mapped[str] = mapped_column(String(50), nullable=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    venue: Mapped[str] = mapped_column(String(255), default="TBD", nullable=True)
     date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     base_price:Mapped[int] = mapped_column(Integer,nullable=True)
     start_time :Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=True)

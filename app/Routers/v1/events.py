@@ -38,6 +38,7 @@ async def create_event_endpoint(
         new_event_id = await service.execute_event_onboarding_workflow(
             tenant_id=current_user.tenant_id,
             title=payload.title,
+            venue=payload.venue,
             date=payload.date,
             max_capacity=payload.max_capacity
         )

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import contextlib
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine , Base # Your database engine setup
@@ -59,3 +59,18 @@ async def health_check():
         "engine": "online",
         "version": "1.0.0"
     }
+
+from app.websockets import manager
+
+@app.websocket("/ws/events/{event_id}")
+async def websocket_event_endpoint(websocket: WebSocket, event_id: int):
+    """
+    WebSocket endpoint for real-time seat map updates.
+    """
+    await manager.connect(websocket, event_id)
+    try:
+        while True:
+            # We don't expect the client to send messages, but we keep the socket open
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, event_id)

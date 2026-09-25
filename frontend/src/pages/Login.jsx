@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,6 +9,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +22,7 @@ export default function Login() {
         password
       });
       login(response.data.access_token);
-      navigate('/dashboard');
+      navigate(from);
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Check your credentials.');
     }
@@ -28,7 +31,10 @@ export default function Login() {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', marginTop: '60px' }}>
       <div className="glass" style={{ padding: '40px', width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ marginBottom: '24px', textAlign: 'center' }}>Sign In</h2>
+        <h2 style={{ marginBottom: '8px', textAlign: 'center' }}>Welcome Back</h2>
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: '24px', fontSize: '0.9rem' }}>
+          Sign in to purchase tickets or manage your events.
+        </p>
         {error && <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
@@ -49,10 +55,10 @@ export default function Login() {
               onChange={e => setPassword(e.target.value)}
             />
           </div>
-          <button type="submit" className="btn-primary" style={{ marginTop: '16px' }}>Authenticate</button>
+          <button type="submit" className="btn-primary" style={{ marginTop: '16px' }}>Sign In</button>
         </form>
         <div style={{ marginTop: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          New to Ticketbook? <Link to="/register" style={{ color: 'var(--primary-blue)', fontWeight: 600, textDecoration: 'none' }}>Sign up</Link>
+          New to Ticketbook? <Link to="/register" state={{ from }} style={{ color: 'var(--primary-blue)', fontWeight: 600, textDecoration: 'none' }}>Sign up</Link>
         </div>
       </div>
     </div>

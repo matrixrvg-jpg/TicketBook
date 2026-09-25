@@ -17,6 +17,7 @@ export default function Dashboard() {
   // Event Form
   const [showEventModal, setShowEventModal] = useState(false);
   const [title, setTitle] = useState('');
+  const [venue, setVenue] = useState('');
   const [date, setDate] = useState('');
   const [capacity, setCapacity] = useState(100);
   const [eventError, setEventError] = useState('');
@@ -63,6 +64,7 @@ export default function Dashboard() {
     try {
       await axios.post('http://localhost:8000/api/v1/events/', {
         title,
+        venue,
         date: new Date(date).toISOString(),
         max_capacity: parseInt(capacity)
       });
@@ -154,6 +156,10 @@ export default function Dashboard() {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-main)', fontWeight: 600 }}>Event Title</label>
                 <input type="text" required value={title} onChange={e => setTitle(e.target.value)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-main)', fontWeight: 600 }}>Venue / Location</label>
+                <input type="text" required value={venue} onChange={e => setVenue(e.target.value)} placeholder="Madison Square Garden, NY" />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-main)', fontWeight: 600 }}>Date & Time</label>

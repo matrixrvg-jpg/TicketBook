@@ -3,6 +3,7 @@ from datetime import datetime
 
 class MVPEventCreate(BaseModel):
     title: str
+    venue: str | None = "TBD"
     date: datetime
     max_capacity: int
 
@@ -10,6 +11,7 @@ class EventResponse(BaseModel):
     id: int
     tenant_id: int
     title: str
+    venue: str | None = "TBD"
     date: datetime
     max_capacity: int
     base_price: int | None = None

@@ -19,10 +19,16 @@ class GetEvent(BaseReadRepository[Event]):
         event.is_active = True
 
     async def list_active_events(self) -> list[dict]:
-        # 1. Subquery to count reserved tickets per event
+        from sqlalchemy import or_
+        # 1. Subquery to count genuinely sold or actively reserved tickets
         subq = (
             select(Ticket.event_id, func.count(Ticket.id).label("sold_count"))
-            .where(Ticket.status == "RESERVED")
+            .where(
+                or_(
+                    Ticket.status == "CONFIRMED",
+                    (Ticket.status == "RESERVED") & (Ticket.expires_at > func.now())
+                )
+            )
             .group_by(Ticket.event_id)
             .subquery()
         )
@@ -44,6 +50,7 @@ class GetEvent(BaseReadRepository[Event]):
                 "id": event_obj.id,
                 "tenant_id": event_obj.tenant_id,
                 "title": event_obj.title,
+                "venue": event_obj.venue,
                 "date": event_obj.date,
                 "max_capacity": event_obj.max_capacity,
                 "base_price": event_obj.base_price,
@@ -65,6 +72,7 @@ class EventRepository(BaseWriteRepository[Event]):
         self,
         tenant_id: int,
         title: str,
+        venue: str,
         date: datetime,
         max_capacity: int,
     ) -> int:
@@ -77,8 +85,8 @@ class EventRepository(BaseWriteRepository[Event]):
         # The exact raw SQL to handle everything in one database round trip
         raw_query = text("""
             WITH new_event AS (
-                INSERT INTO events (tenant_id, title, date, max_capacity, is_active)
-                VALUES (:tenant_id, :title, :date, :max_capacity, true)
+                INSERT INTO events (tenant_id, title, venue, date, max_capacity, is_active)
+                VALUES (:tenant_id, :title, :venue, :date, :max_capacity, true)
                 RETURNING id
             )
             INSERT INTO tickets (event_id, section, seat_number, status, version_id)
@@ -99,6 +107,7 @@ class EventRepository(BaseWriteRepository[Event]):
             {
                 "tenant_id": tenant_id,
                 "title": title,
+                "venue": venue,
                 "date": date,
                 "max_capacity": max_capacity,
                 "half_capacity": max_capacity // 2

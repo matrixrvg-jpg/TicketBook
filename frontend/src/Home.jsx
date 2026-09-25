@@ -82,7 +82,7 @@ export default function Home() {
                           <Calendar size={14} /> {time}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <MapPin size={14} /> Global Server Shard #{event.tenant_id}
+                          <MapPin size={14} /> {event.venue || `Global Server Shard #${event.tenant_id}`}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Users size={14} /> {event.max_capacity} Max Capacity

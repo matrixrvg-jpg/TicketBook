@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Ticket, ShieldAlert, Zap, Clock, X } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
@@ -8,6 +8,7 @@ export default function EventDetails() {
   const { token } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, loading, success, error, in_cart
   const [errorMsg, setErrorMsg] = useState('');
@@ -44,6 +45,30 @@ export default function EventDetails() {
 
   useEffect(() => {
     fetchTickets();
+    
+    // Real-Time WebSocket Connection
+    const ws = new WebSocket(`ws://localhost:8000/ws/events/${id}`);
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.ticket_id && data.status) {
+          setSeats(prevSeats => 
+            prevSeats.map(seat => 
+              seat.id === data.ticket_id 
+                ? { ...seat, status: data.status }
+                : seat
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Failed to parse websocket message", err);
+      }
+    };
+    
+    return () => {
+      ws.close();
+    };
   }, [id]);
 
   useEffect(() => {
@@ -77,7 +102,7 @@ export default function EventDetails() {
   const handleReserveSpecific = async () => {
     if (!selectedSeat) return;
     if (!token) {
-      navigate('/login');
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
     setStatus('loading');
@@ -99,7 +124,7 @@ export default function EventDetails() {
     } catch (error) {
       console.error(error);
       if (error.response?.status === 401) {
-        navigate('/login');
+        navigate('/login', { state: { from: location.pathname } });
         return;
       }
       setStatus('error');
@@ -111,7 +136,7 @@ export default function EventDetails() {
 
   const handleReserveGeneralAdmission = async () => {
     if (!token) {
-      navigate('/login');
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
     setStatus('loading');
@@ -133,7 +158,7 @@ export default function EventDetails() {
     } catch (error) {
       console.error(error);
       if (error.response?.status === 401) {
-        navigate('/login');
+        navigate('/login', { state: { from: location.pathname } });
         return;
       }
       setStatus('error');
