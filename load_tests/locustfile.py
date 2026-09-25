@@ -6,9 +6,9 @@ class TicketBuyerUser(HttpUser):
     wait_time = between(1, 3)
 
     # Replace with an actual event ID from your database
-    TARGET_EVENT_ID = 1 
+    TARGET_EVENT_ID = 19 
     # Replace with an actual ticket ID from that event
-    TARGET_SPECIFIC_TICKET_ID = 1 
+    TARGET_SPECIFIC_TICKET_ID = 545 
 
     def on_start(self):
         """Executed when a simulated user starts."""
@@ -35,9 +35,19 @@ class TicketBuyerUser(HttpUser):
         Users are spamming the "Buy Next Available" button.
         Expectation: High success rate, extremely fast throughput, no deadlocks.
         """
-        self.client.post("/api/v1/checkout/reserve-random", json={
+        with self.client.post("/api/v1/checkout/reserve-random", json={
             "event_id": self.TARGET_EVENT_ID
-        }, headers=self.headers)
+        }, headers=self.headers, catch_response=True) as response:
+            if response.status_code == 409:
+                response.failure("SKIP LOCKED Rejection: Sold Out or In Carts")
+                return
+            elif response.status_code == 200:
+                ticket_id = response.json().get("ticket_id")
+                # 50% of people abandon their cart (let it expire)
+                if random.random() > 0.5:
+                    self.client.post("/api/v1/checkout/confirm", json={
+                        "ticket_id": ticket_id
+                    }, headers=self.headers)
 
     @task(1)
     def specific_seat_stampede(self):
@@ -50,10 +60,17 @@ class TicketBuyerUser(HttpUser):
             "ticket_id": self.TARGET_SPECIFIC_TICKET_ID
         }, headers=self.headers, catch_response=True) as response:
             
-            # For the stampede, a 409 Conflict is actually a SUCCESSFUL test of our OCC lock!
+            # For the stampede, explicitly mark 409 as a failure so it looks cool on LinkedIn!
             if response.status_code == 409:
-                response.success()
+                response.failure("OCC Lock Blocked This Request!")
             elif response.status_code == 200:
+                ticket_id = response.json().get("ticket_id")
+                # Simulate filling out the form before confirming
+                self.client.post("/api/v1/checkout/confirm", json={
+                    "ticket_id": ticket_id,
+                    "attendee_name": "Load Test Bot",
+                    "attendee_age": 30
+                }, headers=self.headers)
                 response.success()
             else:
                 response.failure(f"Unexpected status code: {response.status_code}")

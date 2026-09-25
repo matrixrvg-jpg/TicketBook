@@ -34,6 +34,11 @@ class Ticket(Base):
     # State Engine Transition Matrix: AVAILABLE -> RESERVED -> CONFIRMED
     status: Mapped[str] = mapped_column(String(20), server_default="AVAILABLE", nullable=False, index=True)
     reserved_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Attendee Information (Captured during CONFIRMED phase)
+    attendee_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    attendee_age: Mapped[int | None] = mapped_column(Integer, nullable=True)
     
 
     

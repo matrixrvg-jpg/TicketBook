@@ -81,10 +81,11 @@ class EventRepository(BaseWriteRepository[Event]):
                 VALUES (:tenant_id, :title, :date, :max_capacity, true)
                 RETURNING id
             )
-            INSERT INTO tickets (event_id, seat_number, status, version_id)
+            INSERT INTO tickets (event_id, section, seat_number, status, version_id)
             SELECT
                 new_event.id,
-                'GA-Slot-' || series.num,
+                CASE WHEN series.num <= :half_capacity THEN 'GA' ELSE 'VIP' END,
+                CASE WHEN series.num <= :half_capacity THEN 'GA-' || series.num ELSE 'VIP-' || (series.num - :half_capacity) END,
                 'AVAILABLE',
                 1
             FROM new_event,
@@ -100,6 +101,7 @@ class EventRepository(BaseWriteRepository[Event]):
                 "title": title,
                 "date": date,
                 "max_capacity": max_capacity,
+                "half_capacity": max_capacity // 2
             },
         )
 

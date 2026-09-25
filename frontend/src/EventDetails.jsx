@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Ticket, ShieldAlert, Zap } from 'lucide-react';
+import { Ticket, ShieldAlert, Zap, Clock, X } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 
 export default function EventDetails() {
@@ -9,10 +9,16 @@ export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedSeat, setSelectedSeat] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error, in_cart
   const [errorMsg, setErrorMsg] = useState('');
   const [seats, setSeats] = useState([]);
   const [loadingSeats, setLoadingSeats] = useState(true);
+
+  // Cart Timer State
+  const [cartTicket, setCartTicket] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [attendeeName, setAttendeeName] = useState('');
+  const [attendeeAge, setAttendeeAge] = useState('');
 
   const fetchTickets = async () => {
     try {
@@ -28,7 +34,8 @@ export default function EventDetails() {
         id: i + 1,
         seat_number: `Seat ${i + 1}`,
         status: Math.random() > 0.8 ? 'RESERVED' : 'AVAILABLE',
-        version_id: 1
+        version_id: 1,
+        section: 'VIP'
       })));
     } finally {
       setLoadingSeats(false);
@@ -38,6 +45,28 @@ export default function EventDetails() {
   useEffect(() => {
     fetchTickets();
   }, [id]);
+
+  useEffect(() => {
+    if (cartTicket && cartTicket.expires_at) {
+      const interval = setInterval(() => {
+        // Python datetime string often looks like: 2026-09-25 15:30:26.123456+00:00
+        // JS can parse standard ISO strings. Replace space with T just in case.
+        const isoString = cartTicket.expires_at.replace(' ', 'T');
+        const expiresTime = new Date(isoString).getTime();
+        const now = new Date().getTime();
+        const diff = Math.floor((expiresTime - now) / 1000);
+        
+        if (diff <= 0) {
+          setTimeLeft(0);
+          clearInterval(interval);
+          handleReject(); // Timer expired, release ticket
+        } else {
+          setTimeLeft(diff);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [cartTicket]);
 
   const handleSeatClick = (seat) => {
     if (seat.status !== 'AVAILABLE') return;
@@ -54,13 +83,19 @@ export default function EventDetails() {
     setStatus('loading');
     
     try {
-      await axios.post('http://localhost:8000/api/v1/checkout/reserve', {
+      const response = await axios.post('http://localhost:8000/api/v1/checkout/reserve', {
         ticket_id: parseInt(selectedSeat.id)
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setStatus('success');
-      setTimeout(() => navigate('/'), 3000);
+      
+      setCartTicket({
+        id: response.data.ticket_id,
+        expires_at: response.data.expires_at,
+        isVIP: true,
+        seat_number: selectedSeat.seat_number
+      });
+      setStatus('in_cart');
     } catch (error) {
       console.error(error);
       if (error.response?.status === 401) {
@@ -80,7 +115,7 @@ export default function EventDetails() {
       return;
     }
     setStatus('loading');
-    setSelectedSeat(null); // Clear any specific seat selection
+    setSelectedSeat(null);
     try {
       const response = await axios.post('http://localhost:8000/api/v1/checkout/reserve-random', {
         event_id: parseInt(id)
@@ -88,8 +123,13 @@ export default function EventDetails() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setStatus('success');
-      setTimeout(() => navigate('/'), 3000);
+      setCartTicket({
+        id: response.data.ticket_id,
+        expires_at: response.data.expires_at,
+        isVIP: false,
+        seat_number: 'General Admission'
+      });
+      setStatus('in_cart');
     } catch (error) {
       console.error(error);
       if (error.response?.status === 401) {
@@ -102,9 +142,104 @@ export default function EventDetails() {
     }
   };
 
-  return (
-    <div className="animate-fade-in" style={{ marginTop: '20px', maxWidth: '1000px', margin: '40px auto', padding: '0 24px' }}>
+  const handleConfirmCheckout = async () => {
+    setStatus('loading');
+    try {
+      await axios.post('http://localhost:8000/api/v1/checkout/confirm', {
+        ticket_id: parseInt(cartTicket.id),
+        attendee_name: cartTicket.isVIP ? attendeeName : null,
+        attendee_age: cartTicket.isVIP ? parseInt(attendeeAge) : null
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
+      setCartTicket(null);
+      setStatus('success');
+      setTimeout(() => navigate('/'), 3000);
+    } catch (error) {
+      console.error(error);
+      setStatus('error');
+      setErrorMsg(error.response?.data?.detail || "Checkout Failed: Timer may have expired.");
+      setCartTicket(null);
+      fetchTickets();
+    }
+  };
+
+  const handleReject = () => {
+    // Release the cart back to the pool instantly
+    setCartTicket(null);
+    setStatus('idle');
+    setAttendeeName('');
+    setAttendeeAge('');
+    setSelectedSeat(null);
+    fetchTickets();
+  };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="animate-fade-in" style={{ marginTop: '20px', maxWidth: '1000px', margin: '40px auto', padding: '0 24px', position: 'relative' }}>
+      
+      {/* Modal Overlay for Cart */}
+      {status === 'in_cart' && cartTicket && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div className="glass" style={{ background: 'white', padding: '40px', width: '100%', maxWidth: '500px', borderRadius: '16px', position: 'relative' }}>
+            <button onClick={handleReject} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <X size={24} />
+            </button>
+            
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', color: 'var(--primary-blue)' }}>Complete Your Order</h2>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fef3c7', color: '#b45309', padding: '8px 16px', borderRadius: '20px', fontWeight: 600, fontSize: '1.1rem' }}>
+                <Clock size={20} />
+                {formatTime(timeLeft)}
+              </div>
+              <p style={{ margin: '16px 0 0 0', color: 'var(--text-muted)' }}>
+                We've securely locked <strong>{cartTicket.seat_number}</strong> for you. Please confirm your details before the timer expires.
+              </p>
+            </div>
+
+            {cartTicket.isVIP && (
+              <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Attendee Name *</label>
+                  <input type="text" value={attendeeName} onChange={e => setAttendeeName(e.target.value)} placeholder="Taylor Swift" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Attendee Age *</label>
+                  <input type="number" value={attendeeAge} onChange={e => setAttendeeAge(e.target.value)} placeholder="34" />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={handleReject}
+                style={{ flex: 1, padding: '14px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}
+              >
+                Release Ticket
+              </button>
+              <button 
+                onClick={handleConfirmCheckout}
+                disabled={cartTicket.isVIP && (!attendeeName || !attendeeAge)}
+                className="btn-primary"
+                style={{ flex: 2, padding: '14px' }}
+              >
+                Confirm Purchase
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: '40px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Select Your Seats</h1>
         <p style={{ color: 'var(--text-muted)' }}>
@@ -155,7 +290,7 @@ export default function EventDetails() {
               <div style={{ padding: '80px', color: 'var(--text-muted)' }}>Loading Live Seat Map...</div>
             ) : (
               <div className="seats-grid">
-                {seats.map((seat) => (
+                {seats.filter(seat => seat.section === 'VIP').map((seat) => (
                   <div
                     key={seat.id}
                     onClick={() => handleSeatClick(seat)}
@@ -186,7 +321,7 @@ export default function EventDetails() {
                 {selectedSeat ? (selectedSeat.seat_number || `Seat #${selectedSeat.id}`) : 'No Seat Selected'}
               </h3>
               <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                {selectedSeat ? 'Standard Admission' : 'Click a blue seat on the map above'}
+                {selectedSeat ? 'VIP Specific Admission' : 'Click a blue seat on the map above'}
               </p>
             </div>
             

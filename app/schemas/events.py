@@ -21,6 +21,7 @@ class EventResponse(BaseModel):
 
 class TicketResponse(BaseModel):
     id: int
+    section: str | None = None
     seat_number: str | None = None
     status: str
     version_id: int

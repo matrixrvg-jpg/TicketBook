@@ -12,3 +12,9 @@ class TicketReserveResponse(BaseModel):
     message: str
     ticket_id: Optional[int] = None
     reserved_at: Optional[str] = None
+    expires_at: Optional[str] = None
+    
+class TicketConfirmRequest(BaseModel):
+    ticket_id: int
+    attendee_name: Optional[str] = None
+    attendee_age: Optional[int] = None

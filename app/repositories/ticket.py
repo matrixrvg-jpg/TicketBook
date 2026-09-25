@@ -1,5 +1,5 @@
-# app/repositories/ticket.py
 from sqlalchemy import text
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.base import BaseWriteRepository, BaseReadRepository
 from app.models.ticket import Ticket
@@ -14,7 +14,16 @@ class GetTicket(BaseReadRepository[Ticket]):
             self.model.event_id == event_id
         ).order_by(self.model.id)
         result = await self.db_session.execute(stmt)
-        return list(result.scalars().all())
+        tickets = list(result.scalars().all())
+        
+        # Virtual Eviction: Mask expired tickets as AVAILABLE for the frontend map
+        now = datetime.now(timezone.utc)
+        for t in tickets:
+            if t.status == 'RESERVED' and t.expires_at and t.expires_at < now:
+                # We don't commit this, we just safely mutate the Python object
+                t.status = 'AVAILABLE'
+                
+        return tickets
 
 class TicketRepository(BaseWriteRepository[Ticket]):
     def __init__(self, db_session: AsyncSession):
@@ -31,10 +40,13 @@ class TicketRepository(BaseWriteRepository[Ticket]):
             SET status = 'RESERVED',
                 user_id = :user_id,
                 reserved_at = NOW(),
+                expires_at = NOW() + INTERVAL '1 minute',
                 version_id = version_id + 1
             WHERE id = (
                 SELECT id FROM tickets
-                WHERE event_id = :event_id AND status = 'AVAILABLE'
+                WHERE event_id = :event_id 
+                  AND (status = 'AVAILABLE' OR (status = 'RESERVED' AND expires_at < NOW()))
+                  AND section = 'GA'
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
             )
