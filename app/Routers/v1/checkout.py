@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
+from fastapi_limiter.depends import RateLimiter
+from fastapi_limiter import FastAPILimiter
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
@@ -7,7 +9,14 @@ from app.services.checkout import CheckoutService
 
 router = APIRouter(prefix="/checkout", tags=["Checkout (Resume Flex)"])
 
-@router.post("/reserve", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse)
+async def optional_rate_limiter(request: Request, response: Response):
+    """Bypasses rate limiting if Redis is not running locally."""
+    if getattr(FastAPILimiter, "redis", None):
+        limiter = RateLimiter(times=5, seconds=10)
+        return await limiter(request, response)
+    return None
+
+@router.post("/reserve", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse, dependencies=[Depends(optional_rate_limiter)])
 async def reserve_ticket_endpoint(
     payload: TicketReserveRequest,
     current_user: User = Depends(get_current_user),
@@ -42,7 +51,7 @@ async def reserve_ticket_endpoint(
             detail=f"An unexpected error occurred: {str(e)}"
         )
 
-@router.post("/reserve-random", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse)
+@router.post("/reserve-random", status_code=status.HTTP_200_OK, response_model=TicketReserveResponse, dependencies=[Depends(optional_rate_limiter)])
 async def reserve_random_ticket_endpoint(
     payload: TicketRandomReserveRequest,
     current_user: User = Depends(get_current_user),

@@ -5,6 +5,9 @@ from app.database import engine , Base # Your database engine setup
 import app.models  # Ensure all models are imported for Alembic to detect them
 import asyncio
 import sys
+import os
+import redis.asyncio as redis
+from fastapi_limiter import FastAPILimiter
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -21,7 +24,22 @@ async def lifespan(app: FastAPI):
     # Uvicorn's loop handles the 'async with' and 'await' smoothly here
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+    try:
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+        redis_instance = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+        # Attempt to ping Redis to check if it's alive
+        await redis_instance.ping()
+        await FastAPILimiter.init(redis_instance)
+        print("🟢 Redis Rate Limiter Connected Successfully!")
+    except Exception as e:
+        print(f"🟡 Redis is offline ({e}). Running without Rate Limiter!")
+        redis_instance = None
+    
     yield 
+    
+    if redis_instance:
+        await redis_instance.close()
 
 
 app = FastAPI(
