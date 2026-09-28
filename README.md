@@ -58,7 +58,10 @@ I aggressively load-tested the architecture locally using **Locust**, simulating
 - **18ms Median Latency** on SKIP LOCKED Ticket Assignments.
 - **Zero Database Crashes** under maximum thread-pool starvation (solved via strict `DB_POOL_SIZE` tuning and multi-worker ASGI setup).
 
-*(Upload your Locust Screenshots here)*
+*<img width="925" height="284" alt="Screenshot 2026-09-27 163926" src="https://github.com/user-attachments/assets/cef35472-49f2-49d7-8882-687dd19272f7" />
+<img width="920" height="437" alt="Screenshot 2026-09-27 163951" src="https://github.com/user-attachments/assets/3bba6627-cca6-4707-ab83-3e5628365f6e" />
+
+*
 
 ---
 
@@ -104,4 +107,4 @@ If you want to verify the concurrency logic yourself:
 
 ## 🤝 Let's Connect
 I'm actively documenting my engineering journey and building scalable systems. 
-Connect with me on [LinkedIn](https://linkedin.com/in/your-profile) to discuss backend architecture, database optimization, or new opportunities!
+Connect with me on [LinkedIn](https://www.linkedin.com/in/rudresh-gangurde-58208a380/) to discuss backend architecture, database optimization, or new opportunities!
