@@ -17,6 +17,35 @@ To solve this, I implemented a **Two-Speed Data Access Layer**:
 2. **Maximum Throughput (PostgreSQL SKIP LOCKED):** 
    For General Admission, users just want the *next available* ticket. I implemented atomic `FOR UPDATE SKIP LOCKED` queries. This bypasses lock contention entirely, allowing the database to chew through thousands of concurrent requests and rapidly assign tickets without creating massive locking queues.
 
+### Architecture Flow
+```mermaid
+graph TD
+    %% Client Layer
+    Client[Client / React Frontend] -->|HTTP POST| API[FastAPI Backend]
+
+    %% Backend Layer
+    subgraph Ticketbook Backend
+        API --> Limiter{Redis Rate Limiter}
+        Limiter -->|Pass| Router[Checkout Router]
+        Limiter -->|429 Too Many Requests| Reject[Block Request]
+        
+        Router --> Service[Checkout Service]
+        Service --> Repo[Base Repository]
+    end
+
+    %% Database Layer
+    subgraph PostgreSQL Database
+        Repo -->|Specific VIP Seat| OCC[Optimistic Concurrency Control]
+        Repo -->|General Admission| Skip[FOR UPDATE SKIP LOCKED]
+        
+        OCC -->|Version Mismatch| 409[HTTP 409 Conflict]
+        OCC -->|Success| Commit1[(Commit Row)]
+        
+        Skip -->|Queue Empty| 409
+        Skip -->|Success| Commit2[(Commit Row)]
+    end
+```
+
 ---
 
 ## 📈 Load Testing & Proven Metrics
