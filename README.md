@@ -2,20 +2,18 @@
 
 ![Tech Stack](https://img.shields.io/badge/Python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue) ![Redis](https://img.shields.io/badge/Redis-alpine-red) ![React](https://img.shields.io/badge/React-18-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 
-A distributed, multi-tenant ticketing and reservation backend engineered from scratch to solve the "Taylor Swift Ticket Stampede" problem using a two-speed database concurrency model.
+A distributed, multi-tenant ticketing and reservation backend engineered from scratch to prevent double-booking and race conditions under massive concurrent load, achieving low-latency ticket assignments using a two-speed database concurrency model.
 
 ---
 
-## ⚡ The Problem & The Architecture
-When building a system that handles live inventory, the architecture must inherently protect itself from race conditions and leaky boundaries. A one-size-fits-all database locking strategy destroys throughput.
+## ⚡ The Core Engineering Problems Solved
+When building a system that handles live inventory, the architecture must inherently protect itself from race conditions and leaky boundaries. This backend is engineered to handle edge-cases that crash standard CRUD applications:
 
-To solve this, I implemented a **Two-Speed Data Access Layer**:
-
-1. **The Stampede Scenario (Optimistic Concurrency Control):** 
-   For Reserved Seating (VIP), where exact state matters, I implemented OCC using `version_id`. If 5,000 users try to buy the exact same seat simultaneously, the database mathematically guarantees exactly 1 request succeeds while instantly rejecting the others without deadlocking.
-
-2. **Maximum Throughput (PostgreSQL SKIP LOCKED):** 
-   For General Admission, users just want the *next available* ticket. I implemented atomic `FOR UPDATE SKIP LOCKED` queries. This bypasses lock contention entirely, allowing the database to chew through thousands of concurrent requests and rapidly assign tickets without creating massive locking queues.
+1. **The Double-Booking Problem (Race Conditions):** Uses **Optimistic Concurrency Control (OCC)** (`version_id`) to mathematically guarantee that two people buying the same specific VIP seat will not double-book it.
+2. **The Database Deadlock Problem:** Uses **`FOR UPDATE SKIP LOCKED`** for General Admission, allowing massive concurrent throughput without table-locking queues.
+3. **The Ticket Hoarding / Scalper Problem:** Implements a time-based State Machine (`AVAILABLE` ➔ `RESERVED` ➔ `CONFIRMED`). Unpurchased tickets are naturally released back to the pool after 2 minutes.
+4. **The "God-Class" Code Bloat Problem:** Uses **Python Generics (`Generic[T]`)** to build a strongly-typed `BaseRepository`, keeping the database access layer strictly decoupled from business logic.
+5. **The Bot-Spike / CPU Starvation Problem:** Mitigates massive login traffic spikes using a **Redis Rate Limiter** and strict PostgreSQL Connection Pooling (`DB_POOL_SIZE = 15`).
 
 ### Architecture Flow
 ```mermaid
