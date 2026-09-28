@@ -43,12 +43,15 @@ git clone https://github.com/YourUsername/Ticketbook.git
 cd Ticketbook
 ```
 
-**2. Start the entire Stack:**
+**2. Environment Variables:**
+If you want to run the project locally without Docker, simply copy `.env.template` to a new `.env` file and set your `JWT_SECRET_KEY`.
+
+**3. Start the entire Stack:**
 ```bash
 docker compose up --build -d
 ```
 
-**3. Access the Application:**
+**4. Access the Application:**
 - **Frontend (React):** [http://localhost:3000](http://localhost:3000)
 - **Backend API Docs (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
 
@@ -67,3 +70,9 @@ If you want to verify the concurrency logic yourself:
    locust -f load_tests/locustfile.py
    ```
 4. Open the Locust UI at `http://localhost:8089` and start Swarming!
+
+---
+
+## 🤝 Let's Connect
+I'm actively documenting my engineering journey and building scalable systems. 
+Connect with me on [LinkedIn](https://linkedin.com/in/your-profile) to discuss backend architecture, database optimization, or new opportunities!
