@@ -31,8 +31,10 @@ services:
       # Connects to the 'db' container using Docker's internal DNS
       - DATABASE_URL=postgresql+psycopg://postgres:password123@db:5432/ticket_db
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=supersecretkey_for_local_docker_testing
     depends_on:
       - db
+      - redis
 
   frontend:
     build: ./frontend
