@@ -6,9 +6,9 @@ class TicketBuyerUser(HttpUser):
     wait_time = between(1, 3)
 
     # Replace with an actual event ID from your database
-    TARGET_EVENT_ID = 19 
+    TARGET_EVENT_ID = 23 
     # Replace with an actual ticket ID from that event
-    TARGET_SPECIFIC_TICKET_ID = 545 
+    TARGET_SPECIFIC_TICKET_ID = 19475 
 
     def on_start(self):
         """Executed when a simulated user starts."""

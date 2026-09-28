@@ -30,6 +30,7 @@ services:
     environment:
       # Connects to the 'db' container using Docker's internal DNS
       - DATABASE_URL=postgresql+psycopg://postgres:password123@db:5432/ticket_db
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - db
 
